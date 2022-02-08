@@ -1,5 +1,6 @@
 import express from "express"
 import createHttpError from "http-errors"
+import { mainMiddleware } from "../auth/basic.js"
 import BlogPost from "./schema.js"
 
 const blogRouter = express.Router()
@@ -15,16 +16,16 @@ blogRouter.post("/", async (req, res, next) => {
   }
 })
 
-blogRouter.get("/", async (req, res, next) => {
+blogRouter.get("/",mainMiddleware, async (req, res, next) => {
   try {
-    const blogs = await BlogPost.find()
+    const blogs = await BlogPost.find({},{password:0})
     res.send(blogs)
   } catch (error) {
     next(error)
   }
 })
 
-blogRouter.get("/:blogId", async (req, res, next) => {
+blogRouter.get("/:blogId", mainMiddleware, async (req, res, next) => {
   try {
     const blogId = req.params.blogId
 
@@ -39,7 +40,7 @@ blogRouter.get("/:blogId", async (req, res, next) => {
   }
 })
 
-blogRouter.put("/:blogId", async (req, res, next) => {
+blogRouter.put("/:blogId", mainMiddleware, async (req, res, next) => {
   try {
     const blogId = req.params.blogId
     const UpdateBlog = await BlogPost.findByIdAndUpdate(blogId, req.body)
@@ -53,7 +54,7 @@ blogRouter.put("/:blogId", async (req, res, next) => {
   }
 })
 
-blogRouter.delete("/:blogId", async (req, res, next) => {
+blogRouter.delete("/:blogId", mainMiddleware, async (req, res, next) => {
   try {
     const blogId = req.params.blogId
     const deleteBlog = await BlogPost.findByIdAndDelete(blogId)
