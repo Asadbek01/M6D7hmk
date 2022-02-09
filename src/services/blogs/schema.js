@@ -23,7 +23,8 @@ const userSchema = new Schema(
    authorName:{type: String, required: true},
    authorSurname:{type: String, required: true},
    password:{type: String, required: true},
-   email:{type: String, required: true}
+   email:{type: String, required: true},
+   role:{type: String,enum: ["owner"] ,required: true}
 
 },
   {
@@ -48,9 +49,9 @@ next()
      return userProperty
    
  }
- userSchema.statics.checkCredential = async function (name, passwordPL ) {
+ userSchema.statics.checkCredential = async function (authorName, passwordPL ) {
 
-  const user = await this.findOne({ name }) 
+  const user = await this.findOne({ authorName }) 
 
   if (user) {
     const isMatch = await bcrypt.compare(passwordPL, user.password)
