@@ -1,7 +1,9 @@
 import express from "express"
 import createHttpError from "http-errors"
 import { mainMiddleware } from "../auth/basic.js"
-import { OwnerMiddleware } from "../owner/owner.js"
+import { jwtAuth } from "../auth/jwtTool.js"
+import { OwnerMiddleware } from "../auth/owner.js"
+import { jwtAuthMiddleWare } from "../auth/token.js"
 import BlogPost from "./schema.js"
 
 const blogRouter = express.Router()
@@ -17,7 +19,7 @@ blogRouter.post("/", async (req, res, next) => {
   }
 })
 
-blogRouter.get("/",mainMiddleware, OwnerMiddleware, async (req, res, next) => {
+blogRouter.get("/",jwtAuthMiddleWare, async (req, res, next) => {
   try {
     const blogs = await BlogPost.find()
     res.send(blogs)
@@ -63,6 +65,23 @@ blogRouter.delete("/:blogId", mainMiddleware, async (req, res, next) => {
       res.status(204).send()
     } else {
       next(createHttpError(404, `Blog with id ${blogId} not found!`))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+blogRouter.post("/login", async (req, res, next) => {
+  try {
+    const { name, password } = req.body
+
+    const user = await BlogPost.checkCredential(name, password)
+
+    if (user) {
+      const accessToken = await jwtAuth(user)
+      console.log("accdscsdc",accessToken)
+      res.send({ accessToken })
+    } else {
+      next(createHttpError(401, "Credentials are not ok!"))
     }
   } catch (error) {
     next(error)

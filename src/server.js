@@ -4,7 +4,7 @@ import cors from "cors"
 import mongoose from "mongoose"
 
 import blogRouter from "./services/blogs/index.js"
-import { badRequestHandler, notFoundHandler, genericErrorHandler } from "./errorHandlers.js"
+import { unauthorizedHandler, catchAllHandler, forbiddenHandler } from "./errorHandlers.js"
 
 const server = express()
 
@@ -21,9 +21,9 @@ server.use("/blogs", blogRouter)
 
 // ******************************** ERROR HANDLERS *********************************
 
-server.use(badRequestHandler)
-server.use(notFoundHandler)
-server.use(genericErrorHandler)
+server.use(unauthorizedHandler)
+server.use(catchAllHandler)
+server.use(forbiddenHandler)
 
 mongoose.connect(process.env.MONGO_CONNECTION)
 
