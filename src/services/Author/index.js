@@ -1,8 +1,10 @@
 import express from "express"
 import AuthorModel from "./AuthorSchema.js"
+import passport from "passport"
 
-import   { jwtAuth }  from "../auth/jwtTool.js"
+import   { jwtAuth, verifyRefreshTokenAndGenerateNewToken }  from "../auth/jwtTool.js"
 import  { jwtAuthMiddleWare } from "../auth/JwtMiddleware.js"
+import { HttpError } from "http-errors"
 
 const router = express.Router()
 
@@ -18,7 +20,7 @@ router.get("/", jwtAuthMiddleWare,  async(req, res, next) => {
 
 router.get("/me", jwtAuthMiddleWare, async (req, res, next) => {
   try {
-    res.send(req.author)
+    res.send(req.authors)
   } catch (error) {
     next(error)
   }
@@ -27,9 +29,9 @@ router.get("/me", jwtAuthMiddleWare, async (req, res, next) => {
 router.put("/me", jwtAuthMiddleWare, async (req, res, next) => {
   try {
     const updates = Object.keys(req.body)
-    updates.forEach(update => (req.author[update] = req.body[update]))
-    await req.author.save()
-    res.send(req.author)
+    updates.forEach(update => (req.authors[update] = req.body[update]))
+    await req.authors.save()
+    res.send(req.authors)
   } catch (error) {
     next(error)
   }
@@ -37,7 +39,7 @@ router.put("/me", jwtAuthMiddleWare, async (req, res, next) => {
 
 router.delete("/me", jwtAuthMiddleWare, async (req, res, next) => {
   try {
-    await req.author.deleteOne(res.send({"_id: ": req.author._id}))
+    await req.authors.deleteOne(res.send({"_id: ": req.authors._id}))
   } catch (error) {
     next(error)
   }
@@ -73,11 +75,48 @@ router.post("/login", async (req, res, next) => {
   try {
     const { name, password } = req.body
     const user = await AuthorModel.checkCredential(name, password)
-    const tokens = await jwtAuth(user)
-    res.send(tokens)
-  } catch (error) {
+    if(user){
+        const {tokens, refreshToken} = await jwtAuth(user)
+        res.send({tokens, refreshToken})
+    }else{
+        throw new HttpError(401, "Crediantials are not ok")
+    }
+} catch (error) {
     next(error)
   }
+})  
+
+router.post("/refreshToken", async(req, res, next) =>{
+    try {
+        const {currentRefreshToken} =req.body
+        
+        const {accessToken, refreshToken}= await verifyRefreshTokenAndGenerateNewToken(currentRefreshToken)
+        res.send({accessToken, refreshToken})
+        
+    } catch (error) {
+        next(error)
+    }
 })
+
+router.get(
+    "/googleLogin",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+  ) // This endpoint receives Google Login requests from our FE, and it is going to redirect users to Google Consent Screen
+  
+  router.get(
+    "/googleRedirect", // This endpoint URL should match EXACTLY the one configured on google.cloud dashboard
+    passport.authenticate("google"),
+    async (req, res, next) => {
+      try {
+        console.log("TOKENS: ", req.authors.tokens)
+        // SEND BACK TOKENS
+        res.redirect(
+          `${process.env.FE_URL}?accessToken=${req.authors.tokens.accessToken}&refreshToken=${req.user.tokens.refreshToken}`
+        )
+      } catch (error) {
+        next(error)
+      }
+    }
+  )
 
 export default router

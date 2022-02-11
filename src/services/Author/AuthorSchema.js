@@ -38,6 +38,7 @@ AuthorModel.methods.toJSON = function () {
   
   AuthorModel.statics.checkCredential = async function(name, password) {
     const author = await this.findOne({ name })
+    console.log(author)
   
     if (author) {
       const isMatch = await bcrypt.compare(password, author.password)

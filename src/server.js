@@ -2,19 +2,21 @@ import express from "express"
 import listEndpoints from "express-list-endpoints"
 import cors from "cors"
 import mongoose from "mongoose"
-
+import passport from "passport"
 import blogRouter from "./services/blogs/index.js"
 import router from "./services/Author/index.js"
 import { unauthorizedHandler, catchAllHandler, forbiddenHandler } from "./errorHandlers.js"
+import geogleStrategy from "./services/auth/oath.js"
 
 const server = express()
 
 const port = process.env.PORT || 3001
 
 // ******************************* MIDDLEWARES *************************************
-
+passport.use("geogle", geogleStrategy)
 server.use(cors())
 server.use(express.json())
+server.use(passport.initialize())
 
 // ******************************** ROUTES *****************************************
 server.use("/authors", router)
