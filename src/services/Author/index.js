@@ -1,14 +1,28 @@
 import express from "express"
 import AuthorModel from "./AuthorSchema.js"
 import passport from "passport"
-
 import   { jwtAuth, verifyRefreshTokenAndGenerateNewToken }  from "../auth/jwtTool.js"
 import  { jwtAuthMiddleWare } from "../auth/JwtMiddleware.js"
 import { HttpError } from "http-errors"
 
 const router = express.Router()
 
-router.get("/", jwtAuthMiddleWare,  async(req, res, next) => {
+router.post("/", async ( req, res, next) => {
+  try {
+    const newAuthor = new AuthorModel(req.body)
+    const { _id } =await newAuthor.save()
+    res.status(201).send({ _id })
+  } catch (error) {
+    next(error)
+    
+  }
+})
+
+
+
+
+
+router.get("/",   async(req, res, next) => {
     try{
         const authors = await AuthorModel.find(req.query)
         res.send(authors)
